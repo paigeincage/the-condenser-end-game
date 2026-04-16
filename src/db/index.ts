@@ -71,6 +71,20 @@ export interface Recordable {
   dateDue: string
 }
 
+export interface PurchaseOrder {
+  id?: number
+  date: string
+  poNumber: string
+  type: string
+  createdBy: string
+  approvedBy: string
+  lotInfo: string
+  accountCategory: string
+  backchargedTrade?: string
+  amount: number
+  status: string
+}
+
 export interface DailyNote {
   id?: number
   date: string
@@ -84,15 +98,17 @@ const db = new Dexie('CommandCenter') as Dexie & {
   trades: EntityTable<Trade, 'id'>
   emails: EntityTable<EmailRef, 'id'>
   recordables: EntityTable<Recordable, 'id'>
+  purchaseOrders: EntityTable<PurchaseOrder, 'id'>
   dailyNotes: EntityTable<DailyNote, 'id'>
 }
 
-db.version(4).stores({
+db.version(5).stores({
   lots: '++id, lotBlock, address, scarStage, vfdDate, fieldContact',
   schedule: '++id, lotId, scheduledDate, status',
   trades: '++id, name, specialty',
   emails: '++id, lotId, trade, date, flagged',
   recordables: '++id, lotBlock, tradePartner, category, status, owner',
+  purchaseOrders: '++id, date, poNumber, type, createdBy, status',
   dailyNotes: '++id, date',
 })
 

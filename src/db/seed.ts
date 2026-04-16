@@ -1,15 +1,18 @@
 import { db } from '.'
+import { poData } from './po-data'
 
 export async function seedDatabase() {
   const count = await db.lots.count()
   if (count > 0) {
     const first = await db.lots.toCollection().first()
     const recCount = await db.recordables.count()
-    if (first && 'fieldContact' in first && count >= 28 && recCount > 0) return // already seeded with full data
+    const poCount = await db.purchaseOrders.count()
+    if (first && 'fieldContact' in first && count >= 28 && recCount > 0 && poCount > 0) return
     await Promise.all([
       db.lots.clear(),
       db.schedule.clear(),
       db.recordables.clear(),
+      db.purchaseOrders.clear(),
       db.trades.clear(),
       db.emails.clear(),
     ])
@@ -138,5 +141,11 @@ export async function seedDatabase() {
     },
   ])
 
-  console.log('[CommandCenter] Database seeded with full Patterson Ranch data — 28 lots + 5 recordables')
+  // ═══════════════════════════════════════════════════════════
+  // MODULE 3 — FIELD PURCHASE ORDERS (from PCP 2026-04-16)
+  // ═══════════════════════════════════════════════════════════
+
+  await db.purchaseOrders.bulkAdd(poData)
+
+  console.log(`[CommandCenter] Database seeded — 28 lots + 5 recordables + ${poData.length} POs`)
 }
