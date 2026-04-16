@@ -192,12 +192,26 @@ Return ONLY the JSON object, no other text.`
       }],
     })
 
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
+    let responseText = message.content[0].type === 'text' ? message.content[0].text : ''
+
+    // Strip markdown code fences if Claude wrapped the JSON
+    responseText = responseText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
+
     let specs: any
     try {
       specs = JSON.parse(responseText)
     } catch {
-      specs = { raw: responseText, parseError: true }
+      // Try to extract JSON from the response if there's surrounding text
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        try {
+          specs = JSON.parse(jsonMatch[0])
+        } catch {
+          specs = { raw: responseText, parseError: true }
+        }
+      } else {
+        specs = { raw: responseText, parseError: true }
+      }
     }
 
     // Save specs back to plan record
