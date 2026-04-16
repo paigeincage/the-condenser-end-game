@@ -7,6 +7,7 @@ import { Lots } from './pages/Lots'
 import { Schedule } from './pages/Schedule'
 import { Trades } from './pages/Trades'
 import { Emails } from './pages/Emails'
+import { Recordables } from './pages/Recordables'
 import { LotDetail } from './pages/LotDetail'
 
 export default function App() {
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/trades" element={<Trades />} />
             <Route path="/emails" element={<Emails />} />
+            <Route path="/recordables" element={<Recordables />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>

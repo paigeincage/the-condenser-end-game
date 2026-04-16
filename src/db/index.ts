@@ -2,20 +2,20 @@ import Dexie, { type EntityTable } from 'dexie'
 
 export interface Lot {
   id?: number
-  lotBlock: string        // e.g. "12024"
-  address: string         // e.g. "501 Madelines Meadow Ln"
-  plan: string            // e.g. "Hewitt 80080"
-  planFull: string        // e.g. "80080 Hewitt : Hewitt 80080"
-  elevation: string       // e.g. "Elevation 27"
-  scarStage: string       // Start, Frame, Second, Final
-  productType: string     // "1 Story" or "2 Story"
-  fieldContact: string    // CM assigned — "Beltran, Paige" or "Stranko, Luciano"
-  buyer?: string          // e.g. "Katalina Ramirez"
-  vfdDate: string         // Verified Finish Date
-  estFinish: string       // Estimated finish
-  currentTask: string     // Current active task from PCP
-  taskDays: number        // Days ahead/behind on current task
-  updatedAt: string       // Last PCP update
+  lotBlock: string
+  address: string
+  plan: string
+  planFull: string
+  elevation: string
+  scarStage: string
+  productType: string
+  fieldContact: string
+  buyer?: string
+  vfdDate: string
+  estFinish: string
+  currentTask: string
+  taskDays: number
+  updatedAt: string
   notes?: string
   createdAt: number
 }
@@ -53,6 +53,24 @@ export interface EmailRef {
   flagged: boolean
 }
 
+export interface Recordable {
+  id?: number
+  lotBlock: string
+  address: string
+  community: string
+  tradePartner: string       // e.g. "CASTELAN GROUP LLC"
+  tradePartnerId: string     // e.g. "241CAS125"
+  description: string        // CM notes
+  linkedTask: string         // PCP task it's tied to
+  category: string           // "Failed Municipal Inspection", "PCS Error", "Safety"
+  status: string             // "Open", "Closed"
+  priority: string           // "Medium", "High", "Low"
+  owner: string              // CM name
+  dateCreated: string
+  dateConfirmed: string
+  dateDue: string
+}
+
 export interface DailyNote {
   id?: number
   date: string
@@ -65,14 +83,16 @@ const db = new Dexie('CommandCenter') as Dexie & {
   schedule: EntityTable<ScheduleItem, 'id'>
   trades: EntityTable<Trade, 'id'>
   emails: EntityTable<EmailRef, 'id'>
+  recordables: EntityTable<Recordable, 'id'>
   dailyNotes: EntityTable<DailyNote, 'id'>
 }
 
-db.version(3).stores({
+db.version(4).stores({
   lots: '++id, lotBlock, address, scarStage, vfdDate, fieldContact',
   schedule: '++id, lotId, scheduledDate, status',
   trades: '++id, name, specialty',
   emails: '++id, lotId, trade, date, flagged',
+  recordables: '++id, lotBlock, tradePartner, category, status, owner',
   dailyNotes: '++id, date',
 })
 

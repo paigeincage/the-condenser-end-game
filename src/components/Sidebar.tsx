@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, MapPin, Calendar, Users, Mail, ExternalLink } from 'lucide-react'
+import { LayoutDashboard, MapPin, Calendar, Users, Mail, ClipboardCheck, ExternalLink } from 'lucide-react'
 import { config } from '../config/builder'
 
 const links = [
@@ -8,6 +8,7 @@ const links = [
   { to: '/schedule', icon: Calendar, label: 'Schedule' },
   { to: '/trades', icon: Users, label: 'Trades' },
   { to: '/emails', icon: Mail, label: 'Emails' },
+  { to: '/recordables', icon: ClipboardCheck, label: 'Recordables' },
 ]
 
 export function Sidebar() {

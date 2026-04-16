@@ -4,10 +4,12 @@ export async function seedDatabase() {
   const count = await db.lots.count()
   if (count > 0) {
     const first = await db.lots.toCollection().first()
-    if (first && 'fieldContact' in first && count >= 28) return // already seeded with full data
+    const recCount = await db.recordables.count()
+    if (first && 'fieldContact' in first && count >= 28 && recCount > 0) return // already seeded with full data
     await Promise.all([
       db.lots.clear(),
       db.schedule.clear(),
+      db.recordables.clear(),
       db.trades.clear(),
       db.emails.clear(),
     ])
@@ -84,5 +86,57 @@ export async function seedDatabase() {
     { lotId: 28, trade: 'Foundation', subject: 'Cable install update - 533 Henry Milton', from: 'foundation@txconcrete.com', date: '2026-04-14', snippet: 'Post-tension cables installed. Ready for inspection. Slight delay due to weather yesterday.', flagged: false },
   ])
 
-  console.log('[CommandCenter] Database seeded with full Patterson Ranch data — 28 lots (13 Beltran + 15 Stranko)')
+  // ═══════════════════════════════════════════════════════════
+  // MODULE 2 — RECORDABLES (from PCP 2026-04-16)
+  // ═══════════════════════════════════════════════════════════
+
+  await db.recordables.bulkAdd([
+    {
+      lotBlock: '12011', address: '540 Henry Milton Rd', community: 'Patterson Ranch (8531)',
+      tradePartner: 'CASTELAN GROUP LLC', tradePartnerId: '241CAS125',
+      description: 'Push drywall hang to start on 4/6',
+      linkedTask: 'Drywall- Hang S/R Day 1',
+      category: 'Failed Municipal Inspection', status: 'Open', priority: 'Medium',
+      owner: 'Paige Beltran',
+      dateCreated: '2026-04-03', dateConfirmed: '2026-04-03', dateDue: '2026-04-10',
+    },
+    {
+      lotBlock: '12011', address: '540 Henry Milton Rd', community: 'Patterson Ranch (8531)',
+      tradePartner: 'CWI HOLDINGS LLC', tradePartnerId: '241CWI100',
+      description: 'Push drywall to hang day 1 to start on 4/8 and spin schedule',
+      linkedTask: 'Drywall- Hang S/R Day 1',
+      category: 'Failed Municipal Inspection', status: 'Open', priority: 'Medium',
+      owner: 'Paige Beltran',
+      dateCreated: '2026-04-06', dateConfirmed: '2026-04-07', dateDue: '2026-04-10',
+    },
+    {
+      lotBlock: '12011', address: '540 Henry Milton Rd', community: 'Patterson Ranch (8531)',
+      tradePartner: 'CASTELAN GROUP LLC', tradePartnerId: '241CAS125',
+      description: 'CM needs to verify hang for PCS',
+      linkedTask: 'Drywall- Hang S/R 100% Complete/Pink Dot',
+      category: 'PCS Error', status: 'Open', priority: 'Medium',
+      owner: 'Paige Beltran',
+      dateCreated: '2026-04-13', dateConfirmed: '2026-04-13', dateDue: '2026-04-14',
+    },
+    {
+      lotBlock: '12011', address: '540 Henry Milton Rd', community: 'Patterson Ranch (8531)',
+      tradePartner: 'ECO GARAGE DOOR SERVICES LLC', tradePartnerId: '241ECO105',
+      description: 'Holding task - need to clear the path for install',
+      linkedTask: 'Garage Door- Garage Door Install Complete',
+      category: 'Safety', status: 'Open', priority: 'Medium',
+      owner: 'Paige Beltran',
+      dateCreated: '2026-04-15', dateConfirmed: '2026-04-15', dateDue: '',
+    },
+    {
+      lotBlock: '12011', address: '540 Henry Milton Rd', community: 'Patterson Ranch (8531)',
+      tradePartner: 'UNITED FINISHES LLC', tradePartnerId: '241FLO107',
+      description: 'Will click off when corrections are complete',
+      linkedTask: 'Surround- Waterproof Shower Surround',
+      category: 'PCS Error', status: 'Open', priority: 'Medium',
+      owner: 'Paige Beltran',
+      dateCreated: '2026-04-15', dateConfirmed: '2026-04-15', dateDue: '',
+    },
+  ])
+
+  console.log('[CommandCenter] Database seeded with full Patterson Ranch data — 28 lots + 5 recordables')
 }
