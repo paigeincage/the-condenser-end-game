@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════
+   COMMAND CENTER — Design System Tokens
+   Matches The Condenser: WHITE BG | BLACK TEXT | COPPER ACCENTS
+   ═══════════════════════════════════════════════ */
+
+@theme {
+  --color-g900: #FFFFFF;
+  --color-g800: #F8F8FA;
+  --color-surface: #F2F2F4;
+  --color-surface-2: #EAEAED;
+  --color-g100: #E8E8EC;
+  --color-g200: #D8D8DE;
+  --color-g300: #C0C0C8;
+  --color-g400: #737380;
+  --color-g500: #6E6E78;
+  --color-g600: #4A4A54;
+  --color-g700: #1A1A22;
+  --color-copper: #C45A2C;
+  --color-copper-light: #D4703C;
+  --color-copper-bg: rgba(196, 90, 44, 0.08);
+  --color-copper-mid: rgba(196, 90, 44, 0.18);
+  --color-done: #16A34A;
+  --color-done-bg: rgba(22, 163, 74, 0.08);
+  --color-wip: #D97706;
+  --color-wip-bg: rgba(217, 119, 6, 0.08);
+  --color-danger: #DC2626;
+  --color-danger-bg: rgba(220, 38, 38, 0.08);
+  --color-info: #2563EB;
+  --color-info-bg: rgba(37, 99, 235, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--color-g800);
+  color: var(--color-g700);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-g300); border-radius: 3px; }
