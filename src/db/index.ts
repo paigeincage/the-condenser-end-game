@@ -92,6 +92,18 @@ export interface DailyNote {
   createdAt: number
 }
 
+export interface SavedPlan {
+  id?: number
+  planId: string        // server-side ID
+  name: string
+  pdfFilename: string
+  pages: string[]
+  pageCount: number
+  uploadedAt: string
+  specs: any | null
+  savedAt: number
+}
+
 const db = new Dexie('CommandCenter') as Dexie & {
   lots: EntityTable<Lot, 'id'>
   schedule: EntityTable<ScheduleItem, 'id'>
@@ -100,6 +112,7 @@ const db = new Dexie('CommandCenter') as Dexie & {
   recordables: EntityTable<Recordable, 'id'>
   purchaseOrders: EntityTable<PurchaseOrder, 'id'>
   dailyNotes: EntityTable<DailyNote, 'id'>
+  savedPlans: EntityTable<SavedPlan, 'id'>
 }
 
 db.version(5).stores({
@@ -110,6 +123,17 @@ db.version(5).stores({
   recordables: '++id, lotBlock, tradePartner, category, status, owner',
   purchaseOrders: '++id, date, poNumber, type, createdBy, status',
   dailyNotes: '++id, date',
+})
+
+db.version(6).stores({
+  lots: '++id, lotBlock, address, scarStage, vfdDate, fieldContact',
+  schedule: '++id, lotId, scheduledDate, status',
+  trades: '++id, name, specialty',
+  emails: '++id, lotId, trade, date, flagged',
+  recordables: '++id, lotBlock, tradePartner, category, status, owner',
+  purchaseOrders: '++id, date, poNumber, type, createdBy, status',
+  dailyNotes: '++id, date',
+  savedPlans: '++id, planId, name',
 })
 
 export { db }

@@ -236,6 +236,37 @@ Return ONLY the JSON object, no other text.`
   }
 })
 
+// POST /api/plans/restore — restore plans from browser local save (specs + metadata only, no images)
+plansRouter.post('/restore', (req, res) => {
+  try {
+    const plansData = req.body
+    if (!Array.isArray(plansData)) {
+      res.status(400).json({ error: 'Expected an array of plan records' })
+      return
+    }
+
+    const plansFile = path.join(uploadsDir, 'plans.json')
+    const existing = fs.existsSync(plansFile)
+      ? JSON.parse(fs.readFileSync(plansFile, 'utf-8'))
+      : []
+
+    // Merge: add restored plans that don't already exist on the server
+    const existingIds = new Set(existing.map((p: any) => p.id))
+    for (const plan of plansData) {
+      if (!existingIds.has(plan.id)) {
+        existing.push(plan)
+      }
+    }
+
+    fs.writeFileSync(plansFile, JSON.stringify(existing, null, 2))
+    console.log(`[Plans] Restored ${plansData.length} plans from browser`)
+    res.json({ success: true, count: existing.length })
+  } catch (err: any) {
+    console.error('[Plans] Restore error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // DELETE /api/plans/:id
 plansRouter.delete('/:id', (req, res) => {
   const plansFile = path.join(uploadsDir, 'plans.json')

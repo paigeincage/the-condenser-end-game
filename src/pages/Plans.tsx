@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { Link } from 'react-router-dom'
@@ -6,7 +6,7 @@ import {
   FileUp, Loader, Eye, Brain, Trash2, ChevronLeft, ChevronRight, ChevronDown,
   Home, Bed, Bath, Ruler, Car, Layers, Wind, Droplets, Zap,
   DoorOpen, Grid3X3, MapPin, ArrowRight, X, Flame,
-  ShowerHead, CircleDot, Square, TreeDeciduous
+  ShowerHead, CircleDot, Square, TreeDeciduous, Save, CheckCircle
 } from 'lucide-react'
 import { config } from '../config/builder'
 
@@ -33,11 +33,6 @@ interface PlanSpecs {
   notes?: string[]
 }
 
-// Strip plan numbers for display: "Hewitt 80080" → "Hewitt"
-function displayName(name: string) {
-  return name.replace(/\s+\d{4,}$/, '')
-}
-
 interface PlanRecord {
   id: string
   name: string
@@ -46,6 +41,11 @@ interface PlanRecord {
   pageCount: number
   uploadedAt: string
   specs: PlanSpecs | null
+}
+
+// Strip plan numbers for display: "Hewitt 80080" → "Hewitt"
+function displayName(name: string) {
+  return name.replace(/\s+\d{4,}$/, '')
 }
 
 const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
@@ -58,20 +58,129 @@ export function Plans() {
   const [currentPage, setCurrentPage] = useState(0)
   const [planName, setPlanName] = useState(config.plans[0])
   const [expandedSpecs, setExpandedSpecs] = useState<string | null>(null)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
 
   // Get lots from Dexie to link plans
   const allLots = useLiveQuery(() => db.lots.toArray()) ?? []
+  // Get saved plans from Dexie
+  const savedPlans = useLiveQuery(() => db.savedPlans.toArray()) ?? []
 
-  const fetchPlans = async () => {
+  // Save all current plans to Dexie
+  const saveAllPlans = useCallback(async (plansToSave: PlanRecord[]) => {
+    if (plansToSave.length === 0) return
+    setSaveStatus('saving')
+    try {
+      for (const plan of plansToSave) {
+        const existing = await db.savedPlans.where('planId').equals(plan.id).first()
+        if (existing) {
+          await db.savedPlans.update(existing.id!, {
+            name: plan.name,
+            pdfFilename: plan.pdfFilename,
+            pages: plan.pages,
+            pageCount: plan.pageCount,
+            uploadedAt: plan.uploadedAt,
+            specs: plan.specs,
+            savedAt: Date.now(),
+          })
+        } else {
+          await db.savedPlans.add({
+            planId: plan.id,
+            name: plan.name,
+            pdfFilename: plan.pdfFilename,
+            pages: plan.pages,
+            pageCount: plan.pageCount,
+            uploadedAt: plan.uploadedAt,
+            specs: plan.specs,
+            savedAt: Date.now(),
+          })
+        }
+      }
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+    } catch (err) {
+      console.error('Failed to save plans:', err)
+      setSaveStatus('idle')
+    }
+  }, [])
+
+  // Load plans: merge server data with locally saved data
+  const fetchPlans = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/plans`)
-      if (res.ok) setPlans(await res.json())
+      if (res.ok) {
+        const serverPlans: PlanRecord[] = await res.json()
+        if (serverPlans.length > 0) {
+          setPlans(serverPlans)
+          // Auto-save to Dexie whenever we get server data
+          saveAllPlans(serverPlans)
+          return
+        }
+      }
     } catch (err) {
-      console.error('Failed to fetch plans:', err)
+      console.error('Server fetch failed, loading from local save:', err)
+    }
+
+    // Fallback: load from Dexie if server has nothing or is down
+    const local = await db.savedPlans.toArray()
+    if (local.length > 0) {
+      setPlans(local.map(sp => ({
+        id: sp.planId,
+        name: sp.name,
+        pdfFilename: sp.pdfFilename,
+        pages: sp.pages,
+        pageCount: sp.pageCount,
+        uploadedAt: sp.uploadedAt,
+        specs: sp.specs,
+      })))
+    }
+  }, [saveAllPlans])
+
+  useEffect(() => { fetchPlans() }, [fetchPlans])
+
+  // Also restore from Dexie on mount if server returned empty but we have local data
+  useEffect(() => {
+    if (plans.length === 0 && savedPlans.length > 0) {
+      setPlans(savedPlans.map(sp => ({
+        id: sp.planId,
+        name: sp.name,
+        pdfFilename: sp.pdfFilename,
+        pages: sp.pages,
+        pageCount: sp.pageCount,
+        uploadedAt: sp.uploadedAt,
+        specs: sp.specs,
+      })))
+    }
+  }, [savedPlans.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Restore plans to server from local save
+  const restoreToServer = async () => {
+    if (savedPlans.length === 0) return
+    setSaveStatus('saving')
+    try {
+      const plansData = savedPlans.map(sp => ({
+        id: sp.planId,
+        name: sp.name,
+        pdfFilename: sp.pdfFilename,
+        pages: sp.pages,
+        pageCount: sp.pageCount,
+        uploadedAt: sp.uploadedAt,
+        specs: sp.specs,
+      }))
+      const res = await fetch(`${API_BASE}/api/plans/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(plansData),
+      })
+      if (res.ok) {
+        await fetchPlans()
+      }
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+    } catch (err) {
+      console.error('Restore failed:', err)
+      setSaveStatus('idle')
     }
   }
-
-  useEffect(() => { fetchPlans() }, [])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -102,7 +211,7 @@ export function Plans() {
     try {
       const res = await fetch(`${API_BASE}/api/plans/${plan.id}/analyze`, { method: 'POST' })
       if (res.ok) {
-        await fetchPlans()
+        await fetchPlans() // this auto-saves to Dexie
         setExpandedSpecs(plan.id)
       } else {
         const err = await res.json()
@@ -115,8 +224,11 @@ export function Plans() {
   }
 
   const handleDelete = async (plan: PlanRecord) => {
-    if (!confirm(`Delete ${plan.name}?`)) return
+    if (!confirm(`Delete ${displayName(plan.name)}?`)) return
     await fetch(`${API_BASE}/api/plans/${plan.id}`, { method: 'DELETE' })
+    // Also delete from Dexie
+    const saved = await db.savedPlans.where('planId').equals(plan.id).first()
+    if (saved) await db.savedPlans.delete(saved.id!)
     if (selectedPlan?.id === plan.id) setSelectedPlan(null)
     if (expandedSpecs === plan.id) setExpandedSpecs(null)
     await fetchPlans()
@@ -127,6 +239,8 @@ export function Plans() {
     return allLots.filter(lot => lot.plan === planName)
   }
 
+  const localHasMore = savedPlans.length > 0 && plans.length === 0
+
   return (
     <div className="max-w-6xl">
       {/* Header */}
@@ -136,11 +250,38 @@ export function Plans() {
             <Home size={24} className="text-copper" /> Plan Library
           </h1>
           <p className="text-g400 text-sm mt-0.5">
-            {plans.length} plan{plans.length !== 1 ? 's' : ''} uploaded
-            {plans.filter(p => p.specs).length > 0 && (
+            {plans.length} plan{plans.length !== 1 ? 's' : ''}
+            {plans.filter(p => p.specs && !('parseError' in p.specs)).length > 0 && (
               <span> &middot; {plans.filter(p => p.specs && !('parseError' in p.specs)).length} analyzed</span>
             )}
+            {savedPlans.length > 0 && (
+              <span> &middot; {savedPlans.length} saved locally</span>
+            )}
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {localHasMore && (
+            <button
+              onClick={restoreToServer}
+              className="flex items-center gap-2 px-4 py-2 bg-info text-white text-sm font-medium rounded-lg hover:bg-info/90 transition-colors"
+            >
+              <Save size={16} /> Restore Saved Plans
+            </button>
+          )}
+          <button
+            onClick={() => saveAllPlans(plans)}
+            disabled={plans.length === 0 || saveStatus === 'saving'}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+              saveStatus === 'saved'
+                ? 'bg-done-bg text-done'
+                : saveStatus === 'saving'
+                ? 'bg-g200 text-g400'
+                : 'bg-copper text-white hover:bg-copper-light hover:shadow-lg hover:shadow-copper/20'
+            } disabled:opacity-50`}
+          >
+            {saveStatus === 'saved' ? <CheckCircle size={16} /> : saveStatus === 'saving' ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
+            {saveStatus === 'saved' ? 'Saved!' : saveStatus === 'saving' ? 'Saving...' : 'Save Plans'}
+          </button>
         </div>
       </div>
 
@@ -152,7 +293,7 @@ export function Plans() {
           </div>
           <div className="flex-1">
             <h2 className="text-base font-semibold text-g700 mb-1">Upload Construction Plans</h2>
-            <p className="text-xs text-g400">PDF files up to 50MB. Pages are converted to images for viewing and AI analysis.</p>
+            <p className="text-xs text-g400">PDF files up to 50MB. Plans are auto-saved to your browser after upload and analysis.</p>
           </div>
           <div className="flex items-end gap-3 shrink-0">
             <div>
@@ -197,8 +338,12 @@ export function Plans() {
               <div className="flex-1 bg-surface rounded-lg overflow-hidden flex items-center justify-center" style={{ minHeight: '500px' }}>
                 <img
                   src={`${API_BASE}${selectedPlan.pages[currentPage]}`}
-                  alt={`${selectedPlan.name} page ${currentPage + 1}`}
+                  alt={`${displayName(selectedPlan.name)} page ${currentPage + 1}`}
                   className="max-w-full max-h-[65vh] object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none'
+                    ;(e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="text-g400 text-sm p-8 text-center">Page images not available — re-upload the PDF to restore them.</div>'
+                  }}
                 />
               </div>
               <button
