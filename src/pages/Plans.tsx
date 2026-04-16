@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { Link } from 'react-router-dom'
 import {
-  FileUp, Loader, Eye, Brain, Trash2, ChevronLeft, ChevronRight,
+  FileUp, Loader, Eye, Brain, Trash2, ChevronLeft, ChevronRight, ChevronDown,
   Home, Bed, Bath, Ruler, Car, Layers, Wind, Droplets, Zap,
   DoorOpen, Grid3X3, MapPin, ArrowRight, X, Flame,
   ShowerHead, CircleDot, Square, TreeDeciduous
@@ -447,9 +447,9 @@ function SpecsPanel({ specs, lots }: { specs: PlanSpecs; lots: any[] }) {
           </SpecSection>
         )}
 
-        {/* Notes */}
+        {/* Notes — collapsible */}
         {specs.notes && specs.notes.length > 0 && (
-          <SpecSection title="AI Notes" icon={Brain} iconColor="text-copper">
+          <CollapsibleSection title="AI Notes" count={specs.notes.length} icon={Brain} iconColor="text-copper">
             <div className="space-y-2">
               {specs.notes.map((note, i) => (
                 <div key={i} className="flex items-start gap-2 bg-g900 rounded-lg p-3 border border-g100">
@@ -460,7 +460,7 @@ function SpecsPanel({ specs, lots }: { specs: PlanSpecs; lots: any[] }) {
                 </div>
               ))}
             </div>
-          </SpecSection>
+          </CollapsibleSection>
         )}
 
         {/* Linked Lots */}
@@ -562,6 +562,28 @@ function SystemCard({ icon: Icon, label, value, accent }: {
         <div className="text-xs text-g400 font-medium">{label}</div>
         <div className="text-sm font-semibold text-g700 mt-0.5">{value}</div>
       </div>
+    </div>
+  )
+}
+
+function CollapsibleSection({ title, count, icon: Icon, iconColor, children }: {
+  title: string; count: number; icon: any; iconColor: string; children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 w-full text-left group"
+      >
+        <div className="w-6 h-6 rounded-md bg-g900 flex items-center justify-center">
+          <Icon size={14} className={iconColor} />
+        </div>
+        <h3 className="text-sm font-semibold text-g700">{title}</h3>
+        <span className="text-xs text-g400">{count} note{count !== 1 ? 's' : ''}</span>
+        <ChevronDown size={14} className={`text-g400 ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="mt-3">{children}</div>}
     </div>
   )
 }
