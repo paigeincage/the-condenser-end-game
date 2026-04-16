@@ -2,11 +2,15 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { config } from '../config/builder'
 import { Link } from 'react-router-dom'
-import { MapPin, AlertTriangle, CheckCircle, Clock, Mail, ArrowRight, Hammer } from 'lucide-react'
+import { MapPin, AlertTriangle, CheckCircle, Clock, Mail, ArrowRight, Hammer, Users } from 'lucide-react'
+import { useState } from 'react'
 
 export function Dashboard() {
-  const lots = useLiveQuery(() => db.lots.toArray()) ?? []
+  const allLots = useLiveQuery(() => db.lots.toArray()) ?? []
   const emails = useLiveQuery(() => db.emails.where('flagged').equals(1).toArray()) ?? []
+  const [showAll, setShowAll] = useState(false)
+
+  const lots = showAll ? allLots : allLots.filter(l => l.fieldContact === 'Beltran, Paige')
 
   // Group by SCAR stage
   const byStage: Record<string, number> = {}
@@ -39,6 +43,22 @@ export function Dashboard() {
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           {' '}&middot; {config.user.community} ({config.user.communityId}) &middot; {config.user.market}
         </p>
+      </div>
+
+      {/* CM Filter */}
+      <div className="flex items-center gap-2 mb-6">
+        <button
+          onClick={() => setShowAll(false)}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!showAll ? 'bg-copper text-white' : 'bg-surface text-g500 hover:text-g700'}`}
+        >
+          My Lots ({allLots.filter(l => l.fieldContact === 'Beltran, Paige').length})
+        </button>
+        <button
+          onClick={() => setShowAll(true)}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${showAll ? 'bg-copper text-white' : 'bg-surface text-g500 hover:text-g700'}`}
+        >
+          <Users size={14} /> All Patterson Ranch ({allLots.length})
+        </button>
       </div>
 
       {/* Stats row */}
@@ -96,7 +116,7 @@ export function Dashboard() {
                       {lot.currentTask}
                     </div>
                     <div className="text-xs text-g400 truncate">
-                      {lot.address} &middot; Lot {lot.lotBlock} &middot; {lot.plan}
+                      {lot.address} &middot; Lot {lot.lotBlock} &middot; {lot.fieldContact.split(', ')[1]}
                     </div>
                   </div>
                   <div className="text-right shrink-0">

@@ -24,8 +24,8 @@ export interface BuilderConfig {
   }
   // SCAR stages as used in PCP
   scarStages: string[]
-  // Plans available in this community
   plans: string[]
+  fieldContacts: string[]
 }
 
 export const config: BuilderConfig = {
@@ -55,5 +55,10 @@ export const config: BuilderConfig = {
     'Sandalwood 80090',
     'Dinero 82230',
     'Becket 80060',
+    'Enloe 82240',
+  ],
+  fieldContacts: [
+    'Beltran, Paige',
+    'Stranko, Luciano',
   ],
 }

@@ -9,6 +9,7 @@ export interface Lot {
   elevation: string       // e.g. "Elevation 27"
   scarStage: string       // Start, Frame, Second, Final
   productType: string     // "1 Story" or "2 Story"
+  fieldContact: string    // CM assigned — "Beltran, Paige" or "Stranko, Luciano"
   buyer?: string          // e.g. "Katalina Ramirez"
   vfdDate: string         // Verified Finish Date
   estFinish: string       // Estimated finish
@@ -67,8 +68,8 @@ const db = new Dexie('CommandCenter') as Dexie & {
   dailyNotes: EntityTable<DailyNote, 'id'>
 }
 
-db.version(2).stores({
-  lots: '++id, lotBlock, address, scarStage, vfdDate',
+db.version(3).stores({
+  lots: '++id, lotBlock, address, scarStage, vfdDate, fieldContact',
   schedule: '++id, lotId, scheduledDate, status',
   trades: '++id, name, specialty',
   emails: '++id, lotId, trade, date, flagged',

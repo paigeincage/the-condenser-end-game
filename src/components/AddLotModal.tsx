@@ -27,6 +27,7 @@ export function AddLotModal({ onClose }: { onClose: () => void }) {
       elevation: elevation.trim() || 'TBD',
       scarStage,
       productType,
+      fieldContact: 'Beltran, Paige',
       buyer: buyer.trim() || undefined,
       vfdDate: vfdDate || 'TBD',
       estFinish: vfdDate || 'TBD',

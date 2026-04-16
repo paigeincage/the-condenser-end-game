@@ -7,12 +7,13 @@ import { config } from '../config/builder'
 import { AddLotModal } from '../components/AddLotModal'
 
 export function Lots() {
-  const lots = useLiveQuery(() => db.lots.toArray()) ?? []
+  const allLots = useLiveQuery(() => db.lots.toArray()) ?? []
   const [search, setSearch] = useState('')
   const [filterStage, setFilterStage] = useState('')
+  const [filterCM, setFilterCM] = useState('Beltran, Paige')
   const [showAdd, setShowAdd] = useState(false)
 
-  const filtered = lots.filter(l => {
+  const filtered = allLots.filter(l => {
     const matchSearch = !search ||
       l.address.toLowerCase().includes(search.toLowerCase()) ||
       l.plan.toLowerCase().includes(search.toLowerCase()) ||
@@ -20,7 +21,8 @@ export function Lots() {
       (l.buyer ?? '').toLowerCase().includes(search.toLowerCase()) ||
       l.currentTask.toLowerCase().includes(search.toLowerCase())
     const matchStage = !filterStage || l.scarStage === filterStage
-    return matchSearch && matchStage
+    const matchCM = !filterCM || l.fieldContact === filterCM
+    return matchSearch && matchStage && matchCM
   })
 
   return (
@@ -28,7 +30,7 @@ export function Lots() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-g700">Lots</h1>
-          <p className="text-g400 text-sm mt-0.5">{lots.length} lots in {config.user.community}</p>
+          <p className="text-g400 text-sm mt-0.5">{filtered.length} lots in {config.user.community}</p>
         </div>
         <button
           onClick={() => setShowAdd(true)}
@@ -50,6 +52,14 @@ export function Lots() {
             className="w-full pl-10 pr-4 py-2 bg-g900 border border-g100 rounded-lg text-sm text-g700 placeholder:text-g300 focus:outline-none focus:border-copper"
           />
         </div>
+        <select
+          value={filterCM}
+          onChange={e => setFilterCM(e.target.value)}
+          className="px-3 py-2 bg-g900 border border-g100 rounded-lg text-sm text-g600 focus:outline-none focus:border-copper"
+        >
+          <option value="">All CMs</option>
+          {config.fieldContacts.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
         <select
           value={filterStage}
           onChange={e => setFilterStage(e.target.value)}
@@ -91,7 +101,7 @@ export function Lots() {
               <span className="text-xs text-g600 truncate">{lot.currentTask}</span>
             </div>
             <div className="mt-2 flex items-center justify-between text-xs text-g400">
-              <span>VFD: {lot.vfdDate}</span>
+              <span>{lot.fieldContact.split(', ')[1]} &middot; VFD: {lot.vfdDate}</span>
               {lot.buyer && <span className="text-g500">{lot.buyer}</span>}
               {!lot.buyer && <span className="italic text-g300">No buyer</span>}
             </div>
