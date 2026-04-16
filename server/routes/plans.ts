@@ -152,7 +152,7 @@ plansRouter.post('/:id/analyze', async (req, res) => {
     console.log(`[Plans] Analyzing ${imageContents.length} pages with Claude...`)
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6-20250627',
       max_tokens: 4096,
       messages: [{
         role: 'user',
