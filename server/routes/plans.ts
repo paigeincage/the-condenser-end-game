@@ -162,7 +162,17 @@ plansRouter.post('/:id/analyze', async (req, res) => {
             type: 'text',
             text: `These are construction plan drawings for a residential home plan called "${plan.name}".
 
-Analyze all pages and extract as much information as possible. Return a JSON object with this structure:
+Analyze all pages and extract the following information. Be thorough and consistent — every field must be populated for every plan. If you cannot determine a value from the drawings, use null (not 0, not an empty string).
+
+IMPORTANT RULES:
+- "roofMaterial" = the material covering the roof (e.g. "Composite Shingles", "Metal", "Tile"). Do NOT include the roof shape/style here.
+- "roofStyle" = the structural shape (e.g. "Gable", "Hip", "Combination Hip & Gable"). Separate field from material.
+- "totalSqFt" = total heated/conditioned living area only. Do NOT include garage, porches, or patios.
+- Count carefully: count every window, door, sink, toilet, tub, and shower individually from the floor plans.
+- "rooms" = list ALL rooms shown on floor plans including closets, pantries, utility rooms, hallways. Include dimensions if shown.
+- "exteriorMaterials" = only list cladding/siding materials (e.g. "Brick", "Stone", "Hardie Board", "Stucco"). Do NOT include roofing here.
+
+Return a JSON object with this exact structure:
 
 {
   "planName": "string",
@@ -171,7 +181,7 @@ Analyze all pages and extract as much information as possible. Return a JSON obj
   "bedrooms": number,
   "bathrooms": number,
   "halfBaths": number,
-  "garage": "string (e.g. '2 car')",
+  "garage": "string (e.g. '2 Car', '3 Car')",
   "rooms": [{ "name": "string", "floor": number, "dimensions": "string or null" }],
   "windows": number or null,
   "exteriorDoors": number or null,
@@ -179,11 +189,11 @@ Analyze all pages and extract as much information as possible. Return a JSON obj
   "fixtures": { "sinks": number, "toilets": number, "tubs": number, "showers": number },
   "hvacUnits": number or null,
   "waterHeaters": number or null,
-  "electricalPanel": "string or null",
   "foundationType": "string or null",
-  "roofType": "string or null",
+  "roofStyle": "string or null",
+  "roofMaterial": "string or null",
   "exteriorMaterials": ["string"],
-  "notes": ["string — any other notable details"]
+  "notes": ["string — any other notable construction details"]
 }
 
 Return ONLY the JSON object, no other text.`

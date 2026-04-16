@@ -26,9 +26,16 @@ interface PlanSpecs {
   hvacUnits?: number
   waterHeaters?: number
   foundationType?: string
-  roofType?: string
+  roofType?: string       // legacy
+  roofStyle?: string
+  roofMaterial?: string
   exteriorMaterials?: string[]
   notes?: string[]
+}
+
+// Strip plan numbers for display: "Hewitt 80080" → "Hewitt"
+function displayName(name: string) {
+  return name.replace(/\s+\d{4,}$/, '')
 }
 
 interface PlanRecord {
@@ -155,7 +162,7 @@ export function Plans() {
                 onChange={e => setPlanName(e.target.value)}
                 className="px-3 py-2 bg-surface border border-g100 rounded-lg text-sm text-g700 focus:outline-none focus:border-copper"
               >
-                {config.plans.map(p => <option key={p} value={p}>{p}</option>)}
+                {config.plans.map(p => <option key={p} value={p}>{displayName(p)}</option>)}
               </select>
             </div>
             <label className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all ${uploading ? 'bg-g200 text-g400' : 'bg-copper text-white hover:bg-copper-light hover:shadow-lg hover:shadow-copper/20'}`}>
@@ -173,7 +180,7 @@ export function Plans() {
           <div className="bg-g900 rounded-2xl border border-g100 w-full max-w-5xl max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-g100">
               <h2 className="text-base font-semibold text-g700">
-                {selectedPlan.name} — Page {currentPage + 1} of {selectedPlan.pageCount}
+                {displayName(selectedPlan.name)} — Page {currentPage + 1} of {selectedPlan.pageCount}
               </h2>
               <button onClick={() => setSelectedPlan(null)} className="p-1.5 rounded-lg hover:bg-surface text-g400 hover:text-g700 transition-colors">
                 <X size={18} />
@@ -235,9 +242,9 @@ export function Plans() {
                       <Home size={20} className="text-copper" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-g700">{plan.name}</h3>
+                      <h3 className="text-base font-semibold text-g700">{displayName(plan.name)}</h3>
                       <p className="text-xs text-g400 mt-0.5">
-                        {plan.pageCount} pages &middot; Uploaded {new Date(plan.uploadedAt).toLocaleDateString()}
+                        {plan.pageCount} pages
                       </p>
                     </div>
                   </div>
@@ -283,18 +290,17 @@ export function Plans() {
                       <MapPin size={12} className="text-g400" />
                       <span className="text-xs text-g400">{lotsUsingPlan.length} lot{lotsUsingPlan.length !== 1 ? 's' : ''}</span>
                       <div className="flex gap-1 ml-1">
-                        {lotsUsingPlan.slice(0, 4).map(lot => (
+                        {lotsUsingPlan.slice(0, 3).map(lot => (
                           <Link
                             key={lot.id}
                             to={`/lots/${lot.id}`}
-                            className="text-xs px-2 py-0.5 rounded bg-surface text-g600 hover:bg-copper-bg hover:text-copper transition-colors font-mono"
-                            title={lot.address}
+                            className="text-xs px-2 py-0.5 rounded bg-surface text-g600 hover:bg-copper-bg hover:text-copper transition-colors truncate max-w-40"
                           >
-                            {lot.lotBlock}
+                            {lot.address}
                           </Link>
                         ))}
-                        {lotsUsingPlan.length > 4 && (
-                          <span className="text-xs text-g400 px-1">+{lotsUsingPlan.length - 4}</span>
+                        {lotsUsingPlan.length > 3 && (
+                          <span className="text-xs text-g400 px-1">+{lotsUsingPlan.length - 3}</span>
                         )}
                       </div>
                     </div>
@@ -415,7 +421,7 @@ function SpecsPanel({ specs, lots }: { specs: PlanSpecs; lots: any[] }) {
         )}
 
         {/* Systems & Structure */}
-        {(specs.hvacUnits || specs.waterHeaters || specs.foundationType || specs.roofType) && (
+        {(specs.hvacUnits || specs.waterHeaters || specs.foundationType || specs.roofStyle || specs.roofMaterial || specs.roofType) && (
           <SpecSection title="Systems & Structure" icon={Zap} iconColor="text-wip">
             <div className="grid grid-cols-2 gap-3">
               {specs.hvacUnits != null && (
@@ -427,8 +433,11 @@ function SpecsPanel({ specs, lots }: { specs: PlanSpecs; lots: any[] }) {
               {specs.foundationType && (
                 <SystemCard icon={Layers} label="Foundation" value={specs.foundationType} accent="done" />
               )}
-              {specs.roofType && (
-                <SystemCard icon={Home} label="Roof" value={specs.roofType} accent="copper" />
+              {(specs.roofMaterial || specs.roofType) && (
+                <SystemCard icon={Home} label="Roof Material" value={specs.roofMaterial || specs.roofType || '—'} accent="copper" />
+              )}
+              {specs.roofStyle && (
+                <SystemCard icon={Home} label="Roof Style" value={specs.roofStyle} accent="info" />
               )}
             </div>
           </SpecSection>
@@ -474,11 +483,11 @@ function SpecsPanel({ specs, lots }: { specs: PlanSpecs; lots: any[] }) {
                   className="flex items-center justify-between bg-g900 rounded-lg p-3 border border-g100 hover:border-copper/30 group transition-colors"
                 >
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-g400">Lot {lot.lotBlock}</span>
+                    <p className="text-sm font-medium text-g700 group-hover:text-copper transition-colors">{lot.address}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
                       <StagePill stage={lot.scarStage} />
+                      <span className="text-xs text-g400">{lot.elevation}</span>
                     </div>
-                    <p className="text-sm font-medium text-g700 mt-0.5 group-hover:text-copper transition-colors">{lot.address}</p>
                   </div>
                   <ArrowRight size={14} className="text-g300 group-hover:text-copper transition-colors" />
                 </Link>
